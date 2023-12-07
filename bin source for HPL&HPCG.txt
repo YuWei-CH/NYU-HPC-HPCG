@@ -1,0 +1,9 @@
+# Vender Optimization Version Source
+
+## HPL:
+
+The Nvidia Optimized HPL is the GPU version HPL benchmark we want to use during SCC23. we used the xhpl file provided by Nvidia to run HPL. Nvidia Optimized HPL can be found at https://catalog.ngc.nvidia.com/orgs/nvidia/containers/hpc-benchmarks. Get [nvcr.io/nvidia/hpc-benchmarks:23.5](http://nvcr.io/nvidia/hpc-benchmarks:23.10) by clicking on “Get Container” button in the upper right. Then convert Docker to Singularity. After launching Singularity, run HPL.
+
+## HPCG:
+
+Same as HPL, the Nvidia Optimized HPCG is the GPU version HPCG benchmark we want to use during SCC23. we used the xhpcg file provided by Nvidia to run it. Nvidia Optimized HPCG can be found at https://catalog.ngc.nvidia.com/orgs/nvidia/containers/hpc-benchmarks. Get [nvcr.io/nvidia/hpc-benchmarks:23.5](http://nvcr.io/nvidia/hpc-benchmarks:23.10) by clicking on “Get Container” button in the upper right. Then convert Docker to Singularity. After launching Singularity, run HPCG.

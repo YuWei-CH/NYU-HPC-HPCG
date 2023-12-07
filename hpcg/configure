@@ -1,0 +1,60 @@
+#! /bin/sh
+#===============================================================================
+# Copyright 2014-2022 Intel Corporation.
+#
+# This software and the related documents are Intel copyrighted  materials,  and
+# your use of  them is  governed by the  express license  under which  they were
+# provided to you (License).  Unless the License provides otherwise, you may not
+# use, modify, copy, publish, distribute,  disclose or transmit this software or
+# the related documents without Intel's prior written permission.
+#
+# This software and the related documents  are provided as  is,  with no express
+# or implied  warranties,  other  than those  that are  expressly stated  in the
+# License.
+#===============================================================================
+
+src_path=`echo $0 | sed -e s:/configure$::`
+bld_path=`pwd`
+
+#FIXME: need to check whether src and bld are the same (test f1 -ef f2)
+
+if test x"$#" != x"1" -o x"$1" = "x" ; then
+  echo
+  echo Please specify '"'arch'"' argument, for example:
+  echo
+  echo $0 Unix
+  echo
+  exit 127
+fi
+
+arg_arch="$1"
+
+setup_file=${src_path}/setup/Make.${arg_arch}
+
+if test ! -f $setup_file ; then
+  echo
+  echo Please create the configuration file $setup_file
+  echo
+  exit 127
+fi
+
+mkfile=${bld_path}/Makefile
+
+if test -d $mkfile -o -f $mkfile ; then
+  rm -rf $mkfile
+fi
+
+sed -e "s:HPCG_ROOT_PATH:${bld_path}:g" ${src_path}/Makefile.ext | sed -e "s:HPCG_SRC_PATH:${src_path}:g" | sed -e "s:UNKNOWN:${arg_arch}:" > $mkfile
+
+# creating missing directories
+for path in src testing bin setup
+do
+  if test ! -d $path ; then
+    mkdir $path
+  fi
+done
+
+# copy hpcg.dat if it doesn't exist
+if test ! -f bin/hpcg.dat ; then
+  cp ${src_path}/bin/hpcg.dat bin/hpcg.dat
+fi

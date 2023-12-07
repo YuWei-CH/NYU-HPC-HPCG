@@ -1,0 +1,162 @@
+#===============================================================================
+# Copyright 2014-2022 Intel Corporation.
+#
+# This software and the related documents are Intel copyrighted  materials,  and
+# your use of  them is  governed by the  express license  under which  they were
+# provided to you (License).  Unless the License provides otherwise, you may not
+# use, modify, copy, publish, distribute,  disclose or transmit this software or
+# the related documents without Intel's prior written permission.
+#
+# This software and the related documents  are provided as  is,  with no express
+# or implied  warranties,  other  than those  that are  expressly stated  in the
+# License.
+#===============================================================================
+
+# -- High Performance Conjugate Gradient Benchmark (HPCG)
+#    HPCG - 3.1 - March 28, 2019
+#
+#    Michael A. Heroux
+#    Scalable Algorithms Group, Computing Research Center
+#    Sandia National Laboratories, Albuquerque, NM
+#
+#    Piotr Luszczek
+#    Jack Dongarra
+#    University of Tennessee, Knoxville
+#    Innovative Computing Laboratory
+#
+#    (C) Copyright 2013-2019 All Rights Reserved
+#
+# -- Copyright notice and Licensing terms:
+#
+# Redistribution  and  use in  source and binary forms, with or without
+# modification, are  permitted provided  that the following  conditions
+# are met:
+#
+# 1. Redistributions  of  source  code  must retain the above copyright
+# notice, this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce  the above copyright
+# notice, this list of conditions,  and the following disclaimer in the
+# documentation and/or other materials provided with the distribution.
+#
+# 3. All  advertising  materials  mentioning  features  or  use of this
+# software must display the following acknowledgement:
+# This  product  includes  software  developed  at Sandia National
+# Laboratories, Albuquerque, NM and the  University  of
+# Tennessee, Knoxville, Innovative Computing Laboratory.
+#
+# 4. The name of the  University,  the name of the  Laboratory,  or the
+# names  of  its  contributors  may  not  be used to endorse or promote
+# products  derived   from   this  software  without  specific  written
+# permission.
+#
+# -- Disclaimer:
+#
+# THIS  SOFTWARE  IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES,  INCLUDING,  BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE UNIVERSITY
+# OR  CONTRIBUTORS  BE  LIABLE FOR ANY  DIRECT,  INDIRECT,  INCIDENTAL,
+# SPECIAL,  EXEMPLARY,  OR  CONSEQUENTIAL DAMAGES  (INCLUDING,  BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA OR PROFITS; OR BUSINESS INTERRUPTION)  HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT,  STRICT LIABILITY,  OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#******************************************************************************
+
+# ----------------------------------------------------------------------
+# - shell --------------------------------------------------------------
+# ----------------------------------------------------------------------
+#
+SHELL        = /bin/sh
+#
+CD           = cd
+CP           = cp
+LN_S         = ln -s -f
+MKDIR        = mkdir -p
+RM           = /bin/rm -f
+TOUCH        = touch
+#
+# ----------------------------------------------------------------------
+# - HPCG Directory Structure / HPCG library ------------------------------
+# ----------------------------------------------------------------------
+#
+TOPdir       = .
+SRCdir       = $(TOPdir)/src
+INCdir       = $(TOPdir)/src
+BINdir       = $(TOPdir)/bin
+#
+# ----------------------------------------------------------------------
+# - Message Passing library (MPI) --------------------------------------
+# ----------------------------------------------------------------------
+# MPinc tells the  C  compiler where to find the Message Passing library
+# header files,  MPlib  is defined  to be the name of  the library to be
+# used. The variable MPdir is only used for defining MPinc and MPlib.
+#
+MPdir        = 
+MPinc        = 
+MPlib        = 
+#
+#
+# ----------------------------------------------------------------------
+# - HPCG includes / libraries / specifics -------------------------------
+# ----------------------------------------------------------------------
+#
+#ifndef MKLROOT
+MKLROOT=../..
+#endif
+MKL_LIB=$(MKLROOT)/lib/intel64
+
+HPCG_INCLUDES = -I$(INCdir) -I$(INCdir)/$(arch) $(MPinc)
+HPCG_LIBS     =
+ifeq (yes, $(HPCG_ILP64))
+    HPCG_LIBS = -L${MKLROOT}/lib/intel64 -lmkl_intel_ilp64 -lmkl_intel_thread -lmkl_core -lpthread -lm -ldl
+else
+    HPCG_LIBS = -L${MKLROOT}/lib/intel64 -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -lpthread -lm -ldl
+endif
+#
+# - Compile time options -----------------------------------------------
+#
+# -DHPCG_NO_MPI		Define to disable MPI
+# -DHPCG_NO_OPENMP	Define to disable OPENMP
+# -DHPCG_DEBUG       	Define to enable debugging output
+# -DHPCG_DETAILED_DEBUG Define to enable very detailed debugging output
+#
+# By default HPCG will:
+#    *) Build with MPI enabled.
+#    *) Build with OpenMP enabled.
+#    *) Not generate debugging output.
+#
+HPCG_OPTS =
+ifeq (yes, $(HPCG_ILP64))
+    HPCG_OPTS     += -DHPCG_LOCAL_LONG_LONG -DMKL_ILP64
+endif
+#
+# ----------------------------------------------------------------------
+#
+HPCG_DEFS     = -DMPICH_IGNORE_CXX_SEEK $(HPCG_OPTS) $(HPCG_INCLUDES)
+#
+# ----------------------------------------------------------------------
+# - Compilers / linkers - Optimization flags ---------------------------
+# ----------------------------------------------------------------------
+#
+CXX          = mpicxx
+export OMPI_CC=icpc
+CXXFLAGS     = -xCORE-AVX512 -qopt-zmm-usage=high -qopenmp $(HPCG_DEFS) -std=c++11 -D_OPENMPI
+ifeq (yes, $(DBG))
+  CXXFLAGS  += -O0 -g -DHPCG_DEBUG
+else
+  CXXFLAGS  += -O3 -DNDEBUG
+endif
+#
+LINKER       = $(CXX)
+
+LINKFLAGS    = -z relro -z now -Wl,-R'$$ORIGIN/lib/intel64' -L$(MKL_LIB) -liomp5
+#
+ARCHIVER     = ar
+ARFLAGS      = r
+RANLIB       = echo
+#
+# ----------------------------------------------------------------------
+xhpcg_suff = _skx

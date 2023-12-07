@@ -1,0 +1,78 @@
+#===============================================================================
+# Copyright 2018-2021 Intel Corporation.
+#
+# This software and the related documents are Intel copyrighted  materials,  and
+# your use of  them is  governed by the  express license  under which  they were
+# provided to you (License).  Unless the License provides otherwise, you may not
+# use, modify, copy, publish, distribute,  disclose or transmit this software or
+# the related documents without Intel's prior written permission.
+#
+# This software and the related documents  are provided as  is,  with no express
+# or implied  warranties,  other  than those  that are  expressly stated  in the
+# License.
+#===============================================================================
+
+NOTE: The instructions in this file assume you are working with a version
+      of the software from the HPCG repository, or have already unpacked
+      the hpcg distribution tar file.  We assume you are in the main hpcg 
+      directory. Furthermore, we assume that the environment has been 
+      properly set to use Intel(R) C Compiler/Intel(R) C++ Compiler, oneMKL, 
+      and Intel(R) MPI. (to do this, use the script setvars.sh included 
+      in the Intel(R) oneAPI distribution).
+
+1) Review the collection of setup files in 'hpcg/setup'.  Determine which of
+   these files is usable for your system, or create a new file of your own
+   with appropriate parameters, starting from an existing file if you like.
+   Note the suffix of the file Make.suffix (e.g., Make.IMPI_IOMP_AVX2 has the
+   suffix IMPI_IOMP_AVX2).
+
+   Example commands:
+      ls setup
+      cp setup/Make.IMPI_IOMP_AVX2 setup/Make.My_MPI_OMP
+      vi setup/Make.My_MPI_OMP
+
+2) Create a build directory under the main hpcg directory (or somewhere else on
+   your system).  Give the directory a meaningful name such as 'My_MPI_OpenMP'.
+
+   Example command:
+      mkdir My_MPI_OpenMP
+
+3) 'cd' to your build directory, and run the configure command located in the
+   main hpcg directory, defining the path and file argument to be the location
+   of the setup file defined in step 1.  Then run 'make'.  Note that if your
+   main hpcg directory is not located within an Intel MKL distribution, then you
+   must additionally specify MKL_INCLUDE and MKLROOT as command line arguments.
+
+   Example commands:
+      cd My_MPI_OpenMP
+      path_to_hpcg/configure My_MPI_OMP
+      make [MKL_INCLUDE=path_to_include MKLROOT=path_to_root]
+
+   Note: If you want to run HPCG for large problem sizes (more than 428^3), you 
+   need to run make with additional argument HPCG_ILP64=yes. Be aware, that for 
+   such sizes non-optimized HPCG implementation will be used.
+4) If make is successful, you will have a 'bin' directory containing the files
+   'hpcg.dat' and 'xhpcg'.  'cd' to the bin directory and run the benchmark.
+
+   Example commands to run on a 128-node cluster with two Intel(R) Xeon(R)
+   Processor E5-2697 v4 per node with problem size 192 for 60 seconds:
+      cd bin
+      export OMP_NUM_THREADS=18
+      export KMP_AFFINITY=granularity=fine,compact,1,0
+      mpiexec.hydra -genvall -n 256 -ppn 2 ./xhpcg_avx2 -n192 -t60
+
+5) The benchmark has completed execution.  This should take a few minutes
+   when running in evaluation mode, and take about 30 minutes in official
+   benchmark mode.  If you are running on a production system, you may be able
+   to submit results using the Quick Path option, which executes in minimum
+   time.  When the run is complete, you will see a file called
+   'n[size]-[nodes]p-[threads]t-[version]_[timestamp].txt'.  You will also see
+   a log file called 'hpcg[timestamp].txt.  The official results from your
+   run are in the first .txt file.  The final two lines of the file declare whether
+   or not the results are valid, and explain how to report them.
+
+   Example commands:
+      less n192-256p-18t-V3.1_2018-01-09_09-53-28.txt
+
+6) If results are valid, you may upload them to http://hpcg-benchmark.org.
+   If results are not valid, do not submit them.
